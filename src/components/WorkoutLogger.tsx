@@ -149,70 +149,82 @@ export function WorkoutLogger() {
   }
 
   async function handleSave() {
-    if (!programId || !dayId || !selectedDay) return
+    if (!programId || !dayId || !selectedDay) {
+      alert('❌ Pilih Program dan Hari Latihan terlebih dahulu!')
+      return
+    }
+  
     setSaving(true)
     setMessage(null)
-
-    const sessionRes = await fetch('/api/workout-sessions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({
-        program: programId,
-        trainingDay: dayId,
-        date: format(new Date(), 'yyyy-MM-dd'),
-        feeling: Number(feeling),
-        notes,
-      }),
-    })
-
-    if (!sessionRes.ok) {
-      setMessage('Gagal membuat sesi workout.')
-      setSaving(false)
-      return
-    }
-
-    const session = (await sessionRes.json()) as {
-      doc?: { id: string | number }
-      id?: string | number
-    }
-    const sessionId = session.doc?.id ?? session.id
-    if (!sessionId) {
-      setMessage('Gagal mendapatkan ID sesi.')
-      setSaving(false)
-      return
-    }
-
-    for (const ex of selectedDay.exercises ?? []) {
-      const exId = String(ex.id)
-      for (const row of setsByExercise[exId] ?? []) {
-        if (!row.weight || !row.reps) continue
-
-        await fetch('/api/exercise-logs', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({
-            workoutSession: sessionId,
-            exerciseTemplate: ex.id,
-            setType: row.setType,
-            setNumber: row.setNumber,
-            weight: Number(row.weight),
-            reps: Number(row.reps),
-            rir: Number(row.rir),
-            note: row.note || undefined,
-            completedAt: new Date().toISOString(),
-          }),
-        })
-
-        if (row.setType === 'working' || row.setType === 'all-out') {
-          await checkOverload(exId, Number(row.weight), Number(row.reps), Number(row.rir))
+  
+    try {
+      const sessionRes = await fetch('/api/workout-sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          program: Number(programId),
+          trainingDay: Number(dayId),
+          date: format(new Date(), 'yyyy-MM-dd'),
+          feeling: Number(feeling) || 3,
+          notes: notes || '',
+        }),
+      })
+  
+      const sessionData = await sessionRes.json()
+      const sessionId = sessionData.doc?.id ?? sessionData.id
+  
+      if (!sessionRes.ok || !sessionId) {
+        console.error('Gagal buat session:', sessionData)
+        setMessage('❌ Gagal membuat sesi workout')
+        setSaving(false)
+        return
+      }
+  
+      let successCount = 0
+      for (const ex of selectedDay.exercises ?? []) {
+        const exId = String(ex.id)
+        const rows = setsByExercise[exId] ?? []
+  
+        for (const row of rows) {
+          if (!row.weight || !row.reps || Number(row.weight) <= 0 || Number(row.reps) <= 0) {
+            continue
+          }
+  
+          const logRes = await fetch('/api/exercise-logs', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              workoutSession: Number(sessionId),
+              exerciseTemplate: Number(ex.id),
+              setType: row.setType,
+              setNumber: row.setNumber,
+              weight: Number(row.weight),
+              reps: Number(row.reps),
+              rir: Number(row.rir) || 1,
+              note: row.note || undefined,
+              completedAt: new Date().toISOString(),
+            }),
+          })
+  
+          if (logRes.ok) successCount++
+          else console.error('Gagal simpan log untuk exercise', ex.id, await logRes.json())
         }
       }
+  
+      setMessage(`✅ Workout berhasil disimpan! (${successCount} set tercatat)`)
+      setNotes('')
+      setFeeling('3')
+  
+      setTimeout(() => window.location.reload(), 800)
+  
+    } catch (err) {
+      console.error('Error saat save:', err)
+      setMessage('❌ Terjadi kesalahan saat menyimpan')
+    } finally {
+      setSaving(false)
     }
-
-    setMessage('Workout berhasil disimpan!')
-    setSaving(false)
   }
 
   return (
