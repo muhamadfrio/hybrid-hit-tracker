@@ -1,33 +1,87 @@
-# dependencies
-node_modules
-.pnp
+# Dependencies
+/node_modules
+/.pnp
 .pnp.js
+.yarn/install-state.gz
 
-# build
-.next
-out
-dist
-build
-
-# env
+# Environment variables
 .env
-.env.local
-.env.*.local
+.env*.local
+.env*.production
+.env*.development
 
-# payload (regenerate after collection changes)
-src/app/(payload)/admin/importMap.js
+# Next.js
+/.next
+/out
+/next-env.d.ts
+.next
+.next.cache
 
-# debug
+# Payload CMS
+/.payload
+/payload.db
+/build
+/dist
+/payload-generated-types.ts
+/src/payload-types.ts
+
+# Production build
+/build
+
+# Logs
+logs
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
 
-# misc
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+/coverage
+*.lcov
+
+# Temporary folders
+tmp/
+temp/
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 .DS_Store
-*.pem
-.vercel
-.turbo
+Thumbs.db
 
-# typescript
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# Local database (kalau pakai SQLite sementara)
+*.sqlite
+*.sqlite3
+
+# Optional: Vercel / Netlify
+.vercel
+.netlify
+
+# TypeScript
 *.tsbuildinfo
-next-env.d.ts
+
+# Misc
+*.local
